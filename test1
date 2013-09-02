@@ -1,0 +1,200 @@
+#include <iostream>
+#include <stdlib.h>
+using namespace std;
+
+//Status是函数的类型，其值是函数结果状态代码
+typedef int Status;
+//函数结果状态代码
+#define OK       1
+#define ERROR    0
+#define TRUE     1
+#define FALSE    0
+
+//----- 线性表的双向链表存储结构 -----
+typedef struct DuLNode {
+        int    data;
+        struct DuLNode *prior;
+        struct DuLNode *next;
+} DuLNode, *DuLinkList;
+
+//----- 双向链表操作函数 -----
+Status InitDuList(DuLinkList &L);     //构造一个空的双向链表L 
+Status DestroyDuList(DuLinkList &L);  //销毁双向链表L
+Status CreatDuList(DuLinkList &L);    //根据用户输入构造双向链表L 
+Status PrintDuList(DuLinkList L);     //输出双向链表L
+//----- 递归快速排序 -----
+Status     QuickSort(DuLinkList &L, DuLinkList low, DuLinkList high);//对L中low到high间子序列进行递归快速排序 
+DuLinkList Partition(DuLinkList &L, DuLinkList low, DuLinkList high);//快速排序 
+Status     iLessThan(DuLinkList  L, DuLinkList low, DuLinkList high);//判断L中low是否在high前面 
+
+int n;
+
+int main()
+{
+    DuLinkList L;                        //定义头指针L
+    
+    InitDuList(L);                       //初始化L为空的双向链表 
+    CreatDuList(L);                      //根据用户输入构造双向链表L 
+    cout << "要排序的元素按输入顺序依次为：" << endl;
+    PrintDuList(L);                      //输出按用户输入构造的双向链表L 
+    QuickSort(L, L->next, L->prior);     //递归快速排序L
+    cout << "递归快速排序后的元素序列为：" << endl;
+    PrintDuList(L);                      //输出结果 
+    DestroyDuList(L);                    //销毁链表 
+    
+    system("Pause");
+    return 0; 
+}
+
+//构造一个空的双向链表L
+Status InitDuList(DuLinkList &L)
+{
+     L = new DuLNode;
+     if(!L) return ERROR;
+     L->prior = L->next = L;
+     return OK;
+}
+
+//根据用户输入构造双向链表L
+Status CreatDuList(DuLinkList &L)
+{
+     int i, e;
+     DuLinkList temp;
+     
+     do {
+         cout << "请输入要进行排序的元素个数：";
+         cin  >> n;
+         if (n <= 0)
+             cout << "输入错误!!!元素个数必须为非负数!" << endl;
+     } while (n <= 0);       
+             
+     for(i = 0; i < n; i++)//输入 
+     {
+          cout << "请输入第" << i+1 << "个元素：";
+          cin  >> e;
+          temp = new DuLNode;//建立新节点 
+          if(!temp) return ERROR;
+          temp->data = e;
+          L->prior->next = temp, temp->prior = L->prior, temp->next = L, L->prior = temp;
+     }
+     return OK;
+}
+
+//输出双向链表L
+Status PrintDuList(DuLinkList L)
+{
+     DuLinkList temp;
+     int i;
+     
+     if(L->prior == L->next) return ERROR;
+     for(temp = L->next, i = 0; temp != L && i < n; i++, temp = temp->next)
+          cout << temp->data << " ";    
+     cout << endl;
+     
+     return OK;
+}
+
+//判断L中low是否在high前面
+Status iLessThan(DuLinkList L, DuLinkList low, DuLinkList high)
+{
+     Status temp; 
+     int i;
+     
+     if(L->prior == L->next) return ERROR;//空表 
+     if(low == L || high == L) return ERROR;//不合法比较状态 
+     if(low == high) temp = FALSE;          //相等 
+     else {                                 //判断low和high之间关系 
+          for(temp = TRUE, i = 0; low != high && low != L && i < n; i++, low = low->next);
+          if(low == L) temp = FALSE;
+     }
+     
+     return temp;
+}
+
+//快速排序
+DuLinkList Partition(DuLinkList &L, DuLinkList low, DuLinkList high)
+{
+     DuLinkList temp, mark = low;          //枢轴
+     
+     if(L->prior == L->next  ) return mark;//空表 
+     while(!(low == L || high == L) && iLessThan(L, low, high))
+     {
+          while(!(low == L || high == L) && iLessThan(L, low, high) && high->data >= low->data) 
+               high = high->prior;
+          if(!(low == L || high == L) && high->data < low->data)
+          {
+               if(low->next == high)
+               {
+                    low->next = high->next, high->prior = low->prior, low->prior = high, high->next = low;
+                    low->next->prior = low, high->prior->next = high;
+                    temp = low, low = high->next, high = temp;
+               }
+               else {
+                    temp = low->next , low->next  = high->next , high->next  = temp;
+                    temp = low->prior, low->prior = high->prior, high->prior = temp; 
+                    low->prior->next = low, low->next->prior = low, high->prior->next = high, high->next->prior = high;  
+                    temp = low, low = high->next, high = temp;
+               }
+          }
+          while(!(low == L || high == L) && iLessThan(L, low, high) && high->data >= low->data)
+               low  = low->next  ;
+          if(!(low == L || high == L) && high->data < low->data)
+          {
+               
+               if(low->next == high)
+               {
+                    low->next = high->next, high->prior = low->prior, low->prior = high, high->next = low;
+                    low->next->prior = low, high->prior->next = high;
+                    temp = high, high = low->prior, low = temp;
+               }
+               else{
+                    temp = low->next , low->next  = high->next , high->next  = temp;
+                    temp = low->prior, low->prior = high->prior, high->prior = temp; 
+                    low->prior->next = low, low->next->prior = low, high->prior->next = high, high->next->prior = high;  
+                    temp = high, high = low->prior, low = temp;
+               }
+               
+          }
+     }
+     return mark;
+}
+
+//对L中low到high间子序列进行递归快速排序
+Status QuickSort(DuLinkList &L, DuLinkList low, DuLinkList high)
+{
+     DuLinkList pivotloc, temp;
+     int l, h;
+     
+     if(L->prior == L->next  ) return ERROR;                          //空表 
+     if(low == L || high == L) return ERROR;
+     for(l = 0, temp = L; temp !=  low; l++, temp = temp->next );     //保存low、high位置 
+     for(h = 0, temp = L; temp != high; h++, temp = temp->prior);
+     if(iLessThan(L, low, high))
+     {
+          pivotloc = Partition(L, low, high);                         //快速排序，pivotloc枢轴记录 
+          for(low  = L; l > 0; l--, low  = low->next  );              //恢复low、high位置 
+          for(high = L; h > 0; h--, high = high->prior);
+          for(l = 0, temp = L; temp !=  low; l++, temp = temp->next );//保存low、high位置 
+          for(h = 0, temp = L; temp != high; h++, temp = temp->prior);
+          QuickSort(L, low, pivotloc->prior);                         //递归快排low到pivotloc的前一个元素 
+          for(low  = L; l > 0; l--, low  = low->next  );              //恢复low、high位置 
+          for(high = L; h > 0; h--, high = high->prior);
+          QuickSort(L, pivotloc->next, high);                         //递归快排pivotloc的后一个元素到high 
+     }
+     return OK;
+}
+
+//销毁双向链表L
+Status DestroyDuList(DuLinkList &L)
+{
+     DuLinkList temp;
+     
+     if(L->prior == L->next) return ERROR;
+     L->prior->next = NULL;
+     do {
+        temp = L, L = L->next;
+        delete temp;
+     } while(L);
+     
+     return OK;
+}
